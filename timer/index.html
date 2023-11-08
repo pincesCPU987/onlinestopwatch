@@ -1,0 +1,150 @@
+<body>
+  <div id="left">
+    <p id="time">
+    00:05:00.000
+    </p>
+    <div id="keyboard"><button id="b7" class="digit">7</button><button id="b8" class="digit">8</button><button id="b9" class="digit">9</button><br><button id="b4" class="digit">4</button><button id="b5" class="digit">5</button><button id="b6" class="digit">6</button><br><button id="b1" class="digit">1</button><button id="b2" class="digit">2</button><button id="b3" class="digit">3</button><br><button id="b0" class="digitLarge">0</button><button id="backspace" class="digit">«</button></div>
+  </div>
+  <div id="right">
+    <canvas id="circle" width="300" height="300"></canvas>
+  </div>
+</body>
+
+<style>
+  body {
+    font-family: monospace;
+  }
+  .digit {
+    width: 50px;
+    height: 50px;
+  }
+  .digitLarge {
+    width: 100px;
+    height: 50px;
+  }
+  
+  #left {
+    float: left;
+  }
+  #right {
+    float: right;
+  }
+</style>
+
+<script>
+  var oldTime = new Date();
+  var newTime;
+  
+  var time = 5 * 1000 * 60;
+  var originalTime = time;
+  
+  var alarm = new Audio('https://pincescpu987.github.io/onlinestopwatch/alarm.wav');
+  alarm.loop = true;
+  
+  var stopWatchRunning = false;
+  
+  var stopWatch;
+  
+  document.documentElement.addEventListener('keydown', function(e) {
+    if (e.code == 'Space') {
+      if (!stopWatchRunning) {
+      	originalTime = time;
+      	alarm.loop = true;
+        newTime = new Date();
+        oldTime = newTime;
+        stopWatch = setInterval(stopWatchUpdate, 1000/30);
+      } else {
+      	clearInterval(stopWatch);
+      	alarm.loop = false;
+      }
+      stopWatchRunning = !stopWatchRunning;
+    }
+  });
+  
+  function stopWatchUpdate() {
+  	newTime = new Date();
+    
+    if (time < 0) {
+    	time = 0;
+      clearInterval(stopWatch);
+      timeString = '';
+      alarm.play();
+    }
+    
+    var timeElement = document.querySelector('#time');
+    timeElement.innerText = (Math.floor(time/1000/60/60)).toString(10).padStart(2, '0') + ':' + (Math.floor((time/1000)/60) % 60).toString(10).padStart(2, '0') + ':' + ((time / 1000) % 60).toFixed(3).toString(10).padStart(6, '0');
+    
+    updateCircle();
+    
+    time -= newTime - oldTime;
+    
+    oldTime = newTime;
+  }
+  
+  function updateCircle() {
+  	var circle = document.querySelector('#circle');
+    var ctx = circle.getContext('2d');
+    
+    if (originalTime == 0) {
+    	return;
+    }
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 300, 300);
+    for (var i = 0; i <= (time / originalTime) * 360; i++) {
+    	var radians = i * (Math.PI / 180);
+      var radians2 = (i + 1) * (Math.PI / 180);
+      
+      var x = (Math.sin(radians) * 145) + 150;
+      var y = (Math.cos(radians) * -145) + 150;
+      var x2 = (Math.sin(radians2) * 145) + 150;
+      var y2 = (Math.cos(radians2) * -145) + 150;
+      
+      ctx.strokeStyle = '#0000ff';
+      
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+  }
+  
+  //var stopWatch = setInterval(stopwatchUpdate, 1000/30);
+  
+  var buttons = [];
+  
+  for (var i = 0; i < 10; i++) {
+  	buttons.push(document.querySelector('#b' + i));
+  }
+  
+  var timeString = '';
+  
+  var chars = '00:00:00';
+  
+  for (var i = 0; i < buttons.length; i++) {
+  	buttons[i].value = i.toString(10);
+    buttons[i].addEventListener('click', function (e) {
+    	timeString += e.target.value.toString(10);
+      getTime(timeString);
+    });
+  }
+  
+  document.querySelector('#backspace').addEventListener('click', function() {
+  	timeString = timeString.split('');
+    timeString[timeString.length - 1] = '';
+    timeString = timeString.join('');
+    getTime(timeString);
+  });
+  
+  function getTime(timeString) {
+  	var padString = timeString.padStart(6, '0');
+    padString = padString[padString.length - 6] + padString[padString.length - 5] + padString[padString.length - 4] + padString[padString.length - 3] + padString[padString.length - 2] + padString[padString.length - 1]
+    padString = padString.match(/.{1,2}/g);
+    time = (Number(padString[0]) * 60 * 60 * 1000) + (Number(padString[1]) * 60 * 1000) + (Number(padString[2]) * 1000);
+    padString[2] = Number(padString[2]).toFixed(3).padStart(6, '0');
+    document.querySelector('#time').innerText = padString.join(':');
+  }
+</script>
